@@ -12,249 +12,249 @@ Anomaly チュートリアル (Java)
 **config.json**
 
 .. code-block:: python
+ :linenos:
 
- 01 : {
- 02 :  "method" : "lof",
- 03 :  "parameter" : {
- 04 :   "nearest_neighbor_num" : 10,
- 05 :   "reverse_nearest_neighbor_num" : 30,
- 06 :   "method" : "euclid_lsh",
- 07 :   "parameter" : {
- 08 :    "lsh_num" : 8,
- 09 :    "table_num" : 16,
- 10 :    "probe_num" : 64,
- 11 :    "bin_width" : 10,
- 12 :    "seed" : 1234,
- 13 :    "retain_projection" : true
- 14 :   }
- 15 :  },
- 16 : 
- 17 :  "converter" : {
- 18 :   "string_filter_types": {},
- 19 :   "string_filter_rules": [],
- 20 :   "num_filter_types": {},
- 21 :   "num_filter_rules": [],
- 22 :   "string_types": {},
- 23 :   "string_rules": [{"key":"*", "type":"str", "global_weight" : "bin", "sample_weight" : "bin"}],
- 24 :   "num_types": {},
- 25 :   "num_rules": [{"key" : "*", "type" : "num"}]
- 26 :  }
- 27 : }
-
+ {
+  "method" : "lof",
+  "parameter" : {
+   "nearest_neighbor_num" : 10,
+   "reverse_nearest_neighbor_num" : 30,
+   "method" : "euclid_lsh",
+   "parameter" : {
+    "hash_num" : 8,
+    "table_num" : 16,
+    "probe_num" : 64,
+    "bin_width" : 10,
+    "seed" : 1234,
+    "retain_projection" : true
+   }
+  },
  
+  "converter" : {
+   "string_filter_types": {},
+   "string_filter_rules": [],
+   "num_filter_types": {},
+   "num_filter_rules": [],
+   "string_types": {},
+   "string_rules": [{"key":"*", "type":"str", "global_weight" : "bin", "sample_weight" : "bin"}],
+   "num_types": {},
+   "num_rules": [{"key" : "*", "type" : "num"}]
+  }
+ }
 
 **anomaly.java**
 
 .. code-block:: java
+ :linenos:
 
- 001 : package lof;
- 002 : 
- 003 : import java.io.BufferedReader;
- 004 : import java.io.FileNotFoundException;
- 005 : import java.io.FileReader;
- 006 : import java.io.IOException;
- 007 : import java.util.ArrayList;
- 008 : import java.util.Arrays;
- 009 : import java.util.List;
- 010 : 
- 011 : import us.jubat.anomaly.*;
- 012 : 
- 013 : public class Lof {
- 014 : 	public static final String HOST = "127.0.0.1";
- 015 : 	public static final int PORT = 9199;
- 016 : 	public static final String NAME = "anom_kddcup";
- 017 : 	public static final String FILE_PATH = "./src/main/resources/";
- 018 : 	public static final String TEXT_NAME = "kddcup.data_10_percent.txt";
- 019 : 
- 020 : 	// TEXTのカラム名定義
- 021 : 	public static String[] TEXT_COLUMN = {
- 022 : 		"duration",
- 023 : 		"protocol_type",
- 024 : 		"service",
- 025 : 		"flag",
- 026 : 		"src_bytes",
- 027 : 		"dst_bytes",
- 028 : 		"land",
- 029 : 		"wrong_fragment",
- 030 : 		"urgent",
- 031 : 		"hot",
- 032 : 		"num_failed_logins",
- 033 : 		"logged_in",
- 034 : 		"num_compromised",
- 035 : 		"root_shell",
- 036 : 		"su_attempted",
- 037 : 		"num_root",
- 038 : 		"num_file_creations",
- 039 : 		"num_shells",
- 040 : 		"num_access_files",
- 041 : 		"num_outbound_cmds",
- 042 : 		"is_host_login",
- 043 : 		"is_guest_login",
- 044 : 		"count",
- 045 : 		"srv_count",
- 046 : 		"serror_rate",
- 047 : 		"srv_serror_rate",
- 048 : 		"rerror_rate",
- 049 : 		"srv_rerror_rate",
- 050 : 		"same_srv_rate",
- 051 : 		"diff_srv_rate",
- 052 : 		"srv_diff_host_rate",
- 053 : 		"dst_host_count",
- 054 : 		"dst_host_srv_count",
- 055 : 		"dst_host_same_srv_rate",
- 056 : 		"dst_host_diff_srv_rate",
- 057 : 		"dst_host_same_src_port_rate",
- 058 : 		"dst_host_srv_diff_host_rate",
- 059 : 		"dst_host_serror_rate",
- 060 : 		"dst_host_srv_serror_rate",
- 061 : 		"dst_host_rerror_rate",
- 062 : 		"dst_host_srv_rerror_rate",
- 063 : 		"label"
- 064 : 	};
- 065 : 
- 066 : 	// String型の項目
- 067 : 	public static String[] STRING_COLUMN = {
- 068 : 		"protocol_type",
- 069 : 		"service",
- 070 : 		"flag",
- 071 : 		"land",
- 072 : 		"logged_in",
- 073 : 		"is_host_login",
- 074 : 		"is_guest_login"
- 075 : 	};
- 076 : 
- 077 : 	// Double型の項目
- 078 : 	public static String[] DOUBLE_COLUMN = {
- 079 : 		"duration",
- 080 : 		"src_bytes",
- 081 : 		"dst_bytes",
- 082 : 		"wrong_fragment",
- 083 : 		"urgent",
- 084 : 		"hot",
- 085 : 		"num_failed_logins",
- 086 : 		"num_compromised",
- 087 : 		"root_shell",
- 088 : 		"su_attempted",
- 089 : 		"num_root",
- 090 : 		"num_file_creations",
- 091 : 		"num_shells",
- 092 : 		"num_access_files",
- 093 : 		"num_outbound_cmds",
- 094 : 		"count",
- 095 : 		"srv_count",
- 096 : 		"serror_rate",
- 097 : 		"srv_serror_rate",
- 098 : 		"rerror_rate",
- 099 : 		"srv_rerror_rate",
- 100 : 		"same_srv_rate",
- 101 : 		"diff_srv_rate",
- 102 : 		"srv_diff_host_rate",
- 103 : 		"dst_host_count",
- 104 : 		"dst_host_srv_count",
- 105 : 		"dst_host_same_srv_rate",
- 106 : 		"dst_host_same_src_port_rate",
- 107 : 		"dst_host_diff_srv_rate",
- 108 : 		"dst_host_srv_diff_host_rate",
- 109 : 		"dst_host_serror_rate",
- 110 : 		"dst_host_srv_serror_rate",
- 111 : 		"dst_host_rerror_rate",
- 112 : 		"dst_host_srv_rerror_rate"
- 113 : 	};
- 114 : 
- 115 : 	public void execute() throws Exception {
- 116 : 		// 1. Jubatus Serverへの接続設定
- 117 : 		AnomalyClient client = new AnomalyClient(HOST, PORT, 5);
- 118 : 
- 119 : 		// 2. 学習用データの準備
- 120 : 		Datum datum = null;
- 121 : 		TupleStringFloat result = null;
- 122 : 
- 123 : 		try {
- 124 : 			BufferedReader br = new BufferedReader(new FileReader(FILE_PATH + TEXT_NAME));
- 125 : 
- 126 : 			List<String> strList = new ArrayList<String>();
- 127 : 			List<String> doubleList = new ArrayList<String>();
- 128 : 
- 129 : 			String line = "";
- 130 : 
- 131 : 			// 最終行までループでまわし、1行ずつ読み込む
- 132 : 			while ((line = br.readLine()) != null) {
- 133 : 				strList.clear();
- 134 : 				doubleList.clear();
- 135 : 
- 136 : 				// 1行をデータの要素に分割
- 137 : 				String[] strAry = line.split(",");
- 138 : 
- 139 : 				// StringとDoubleの項目ごとにListを作成
- 140 : 				for (int i = 0; i < strAry.length; i++) {
- 141 : 					if (Arrays.toString(STRING_COLUMN).contains(TEXT_COLUMN[i])) {
- 142 : 						strList.add(strAry[i]);
- 143 : 					} else if (Arrays.toString(DOUBLE_COLUMN).contains(TEXT_COLUMN[i])) {
- 144 : 						doubleList.add(strAry[i]);
- 145 : 					}
- 146 : 				}
- 147 : 				// datumを作成
- 148 : 				datum = makeDatum(strList, doubleList);
- 149 : 
- 150 : 				// 3. データの学習（学習モデルの更新）
- 151 : 				result = client.add(NAME, datum);
- 152 : 
- 153 : 				// 4. 結果の出力
- 154 : 				if ( !(Float.isInfinite(result.second)) && result.second != 1.0) {
- 155 : 					System.out.print( "('" + result.first + "', " + result.second + ") " + strAry[strAry.length -1] + "\n" );
- 156 : 				}
- 157 : 			}
- 158 : 			br.close();
- 159 : 
- 160 : 		} catch (FileNotFoundException e) {
- 161 : 			// Fileオブジェクト生成時の例外捕捉
- 162 : 			e.printStackTrace();
- 163 : 		} catch (IOException e) {
- 164 : 			// BufferedReaderオブジェクトのクローズ時の例外捕捉
- 165 : 			e.printStackTrace();
- 166 : 		}
- 167 : 		return;
- 168 : 	}
- 169 : 
- 170 : 
- 171 : 	// Datumを指定された名称で、リスト分作成
- 172 : 	private Datum makeDatum(List<String> strList, List<String> doubleList) {
- 173 : 
- 174 : 		Datum datum = new Datum();
- 175 : 		datum.string_values = new ArrayList<TupleStringString>();
- 176 : 		datum.num_values = new ArrayList<TupleStringDouble>();
- 177 : 
- 178 : 		for (int i = 0; i < strList.size(); i++) {
- 179 : 			TupleStringString data = new TupleStringString();
- 180 : 			data.first = STRING_COLUMN[i];
- 181 : 			data.second = strList.get(i);
- 182 : 
- 183 : 			datum.string_values.add(data);
- 184 : 		}
- 185 : 
- 186 : 		try {
- 187 : 			for (int i = 0; i < doubleList.size(); i++) {
- 188 : 				TupleStringDouble data = new TupleStringDouble();
- 189 : 				data.first = DOUBLE_COLUMN[i];
- 190 : 				data.second = Double.parseDouble(doubleList.get(i));
- 191 : 
- 192 : 				datum.num_values.add(data);
- 193 : 			}
- 194 : 		} catch (NumberFormatException e) {
- 195 : 			e.printStackTrace();
- 196 : 			return null;
- 197 : 		}
- 198 : 
- 199 : 		return datum;
- 200 : 	}
- 201 : 
- 202 : 	// メインメソッド
- 203 : 	public static void main(String[] args) throws Exception {
- 204 : 
- 205 : 		new Lof().execute();
- 206 : 		System.exit(0);
- 207 : 	}
- 208 : }
+ package lof;
+ 
+ import java.io.BufferedReader;
+ import java.io.FileNotFoundException;
+ import java.io.FileReader;
+ import java.io.IOException;
+ import java.util.ArrayList;
+ import java.util.Arrays;
+ import java.util.List;
+ 
+ import us.jubat.anomaly.*;
+ 
+ public class Lof {
+ 	public static final String HOST = "127.0.0.1";
+ 	public static final int PORT = 9199;
+ 	public static final String NAME = "anom_kddcup";
+ 	public static final String FILE_PATH = "./src/main/resources/";
+ 	public static final String TEXT_NAME = "kddcup.data_10_percent.txt";
+ 
+ 	// TEXTのカラム名定義
+ 	public static String[] TEXT_COLUMN = {
+ 		"duration",
+ 		"protocol_type",
+ 		"service",
+ 		"flag",
+ 		"src_bytes",
+ 		"dst_bytes",
+ 		"land",
+ 		"wrong_fragment",
+ 		"urgent",
+ 		"hot",
+ 		"num_failed_logins",
+ 		"logged_in",
+ 		"num_compromised",
+ 		"root_shell",
+ 		"su_attempted",
+ 		"num_root",
+ 		"num_file_creations",
+ 		"num_shells",
+ 		"num_access_files",
+ 		"num_outbound_cmds",
+ 		"is_host_login",
+ 		"is_guest_login",
+ 		"count",
+ 		"srv_count",
+ 		"serror_rate",
+ 		"srv_serror_rate",
+ 		"rerror_rate",
+ 		"srv_rerror_rate",
+ 		"same_srv_rate",
+ 		"diff_srv_rate",
+ 		"srv_diff_host_rate",
+ 		"dst_host_count",
+ 		"dst_host_srv_count",
+ 		"dst_host_same_srv_rate",
+ 		"dst_host_diff_srv_rate",
+ 		"dst_host_same_src_port_rate",
+ 		"dst_host_srv_diff_host_rate",
+ 		"dst_host_serror_rate",
+ 		"dst_host_srv_serror_rate",
+ 		"dst_host_rerror_rate",
+ 		"dst_host_srv_rerror_rate",
+ 		"label"
+ 	};
+ 
+ 	// String型の項目
+ 	public static String[] STRING_COLUMN = {
+ 		"protocol_type",
+ 		"service",
+ 		"flag",
+ 		"land",
+ 		"logged_in",
+ 		"is_host_login",
+ 		"is_guest_login"
+ 	};
+ 
+ 	// Double型の項目
+ 	public static String[] DOUBLE_COLUMN = {
+ 		"duration",
+ 		"src_bytes",
+ 		"dst_bytes",
+ 		"wrong_fragment",
+ 		"urgent",
+ 		"hot",
+ 		"num_failed_logins",
+ 		"num_compromised",
+ 		"root_shell",
+ 		"su_attempted",
+ 		"num_root",
+ 		"num_file_creations",
+ 		"num_shells",
+ 		"num_access_files",
+ 		"num_outbound_cmds",
+ 		"count",
+ 		"srv_count",
+ 		"serror_rate",
+ 		"srv_serror_rate",
+ 		"rerror_rate",
+ 		"srv_rerror_rate",
+ 		"same_srv_rate",
+ 		"diff_srv_rate",
+ 		"srv_diff_host_rate",
+ 		"dst_host_count",
+ 		"dst_host_srv_count",
+ 		"dst_host_same_srv_rate",
+ 		"dst_host_same_src_port_rate",
+ 		"dst_host_diff_srv_rate",
+ 		"dst_host_srv_diff_host_rate",
+ 		"dst_host_serror_rate",
+ 		"dst_host_srv_serror_rate",
+ 		"dst_host_rerror_rate",
+ 		"dst_host_srv_rerror_rate"
+ 	};
+ 
+ 	public void execute() throws Exception {
+ 		// 1. Jubatus Serverへの接続設定
+ 		AnomalyClient client = new AnomalyClient(HOST, PORT, 5);
+ 
+ 		// 2. 学習用データの準備
+ 		Datum datum = null;
+ 		TupleStringFloat result = null;
+ 
+ 		try {
+ 			BufferedReader br = new BufferedReader(new FileReader(FILE_PATH + TEXT_NAME));
+ 
+ 			List<String> strList = new ArrayList<String>();
+ 			List<String> doubleList = new ArrayList<String>();
+ 
+ 			String line = "";
+ 
+ 			// 最終行までループでまわし、1行ずつ読み込む
+ 			while ((line = br.readLine()) != null) {
+ 				strList.clear();
+ 				doubleList.clear();
+ 
+ 				// 1行をデータの要素に分割
+ 				String[] strAry = line.split(",");
+ 
+ 				// StringとDoubleの項目ごとにListを作成
+ 				for (int i = 0; i < strAry.length; i++) {
+ 					if (Arrays.toString(STRING_COLUMN).contains(TEXT_COLUMN[i])) {
+ 						strList.add(strAry[i]);
+ 					} else if (Arrays.toString(DOUBLE_COLUMN).contains(TEXT_COLUMN[i])) {
+ 						doubleList.add(strAry[i]);
+ 					}
+ 				}
+ 				// datumを作成
+ 				datum = makeDatum(strList, doubleList);
+ 
+ 				// 3. データの学習（学習モデルの更新）
+ 				result = client.add(NAME, datum);
+ 
+ 				// 4. 結果の出力
+ 				if ( !(Float.isInfinite(result.second)) && result.second != 1.0) {
+ 					System.out.print( "('" + result.first + "', " + result.second + ") " + strAry[strAry.length -1] + "\n" );
+ 				}
+ 			}
+ 			br.close();
+ 
+ 		} catch (FileNotFoundException e) {
+ 			// Fileオブジェクト生成時の例外捕捉
+ 			e.printStackTrace();
+ 		} catch (IOException e) {
+ 			// BufferedReaderオブジェクトのクローズ時の例外捕捉
+ 			e.printStackTrace();
+ 		}
+ 		return;
+ 	}
+ 
+ 
+ 	// Datumを指定された名称で、リスト分作成
+ 	private Datum makeDatum(List<String> strList, List<String> doubleList) {
+ 
+ 		Datum datum = new Datum();
+ 		datum.string_values = new ArrayList<TupleStringString>();
+ 		datum.num_values = new ArrayList<TupleStringDouble>();
+ 
+ 		for (int i = 0; i < strList.size(); i++) {
+ 			TupleStringString data = new TupleStringString();
+ 			data.first = STRING_COLUMN[i];
+ 			data.second = strList.get(i);
+ 
+ 			datum.string_values.add(data);
+ 		}
+ 
+ 		try {
+ 			for (int i = 0; i < doubleList.size(); i++) {
+ 				TupleStringDouble data = new TupleStringDouble();
+ 				data.first = DOUBLE_COLUMN[i];
+ 				data.second = Double.parseDouble(doubleList.get(i));
+ 
+ 				datum.num_values.add(data);
+ 			}
+ 		} catch (NumberFormatException e) {
+ 			e.printStackTrace();
+ 			return null;
+ 		}
+ 
+ 		return datum;
+ 	}
+ 
+ 	// メインメソッド
+ 	public static void main(String[] args) throws Exception {
+ 
+ 		new Lof().execute();
+ 		System.exit(0);
+ 	}
+ }
 
 --------------------------------
 解説

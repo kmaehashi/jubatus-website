@@ -12,118 +12,117 @@ Anomaly チュートリアル (Ruby)
 **config.json**
 
 .. code-block:: python
+ :linenos:
 
- 01 : {
- 02 :  "method" : "lof",
- 03 :  "parameter" : {
- 04 :   "nearest_neighbor_num" : 10,
- 05 :   "reverse_nearest_neighbor_num" : 30,
- 06 :   "method" : "euclid_lsh",
- 07 :   "parameter" : {
- 08 :    "lsh_num" : 8,
- 09 :    "table_num" : 16,
- 10 :    "probe_num" : 64,
- 11 :    "bin_width" : 10,
- 12 :    "seed" : 1234,
- 13 :    "retain_projection" : true
- 14 :   }
- 15 :  },
- 16 : 
- 17 :  "converter" : {
- 18 :   "string_filter_types": {},
- 19 :   "string_filter_rules": [],
- 20 :   "num_filter_types": {},
- 21 :   "num_filter_rules": [],
- 22 :   "string_types": {},
- 23 :   "string_rules": [{"key":"*", "type":"str", "global_weight" : "bin", "sample_weight" : "bin"}],
- 24 :   "num_types": {},
- 25 :   "num_rules": [{"key" : "*", "type" : "num"}]
- 26 :  }
- 27 : }
-
+ {
+  "method" : "lof",
+  "parameter" : {
+   "nearest_neighbor_num" : 10,
+   "reverse_nearest_neighbor_num" : 30,
+   "method" : "euclid_lsh",
+   "parameter" : {
+    "hash_num" : 8,
+    "table_num" : 16,
+    "probe_num" : 64,
+    "bin_width" : 10,
+    "seed" : 1234,
+    "retain_projection" : true
+   }
+  },
  
+  "converter" : {
+   "string_filter_types": {},
+   "string_filter_rules": [],
+   "num_filter_types": {},
+   "num_filter_rules": [],
+   "string_types": {},
+   "string_rules": [{"key":"*", "type":"str", "global_weight" : "bin", "sample_weight" : "bin"}],
+   "num_types": {},
+   "num_rules": [{"key" : "*", "type" : "num"}]
+  }
+ }
 
 **anomaly.rb**
 
 .. code-block:: ruby
+ :linenos:
 
- 01 : #!/usr/bin/env ruby
- 02 : # -*- coding: utf-8 -*-
- 03 : 
- 04 : $host = "127.0.0.1"
- 05 : $port = 9199
- 06 : $name = "test"
- 07 : 
- 08 : require 'json'
- 09 : 
- 10 : require 'jubatus/anomaly/client'
- 11 : require 'jubatus/anomaly/types'
- 12 : 
- 13 : 
- 14 : # 1.Jubatus Serverへの接続設定
- 15 : client = Jubatus::Anomaly::Client::Anomaly.new($host, $port)
- 16 : 
- 17 : # 2.学習用データの準備
- 18 : open("kddcup.data_10_percent.txt") {|f|
- 19 :   f.each { |line|
- 20 :     duration, protocol_type, service, flag, src_bytes, dst_bytes, land, wrong_fragment, urgent, hot, num_failed_logins, logged_in, num_compromised, root_shell, su_attempted, num_root, num_file_creations, num_shells, num_access_files, num_outbound_cmds, is_host_login, is_guest_login, count, srv_count, serror_rate, srv_serror_rate, rerror_rate, srv_rerror_rate, same_srv_rate, diff_srv_rate, srv_diff_host_rate, dst_host_count, dst_host_srv_count, dst_host_same_srv_rate, dst_host_diff_srv_rate, dst_host_same_src_port_rate, dst_host_srv_diff_host_rate, dst_host_serror_rate, dst_host_srv_serror_rate, dst_host_rerror_rate, dst_host_srv_rerror_rate, label = line.split(",")
- 21 :     datum = Jubatus::Anomaly::Datum.new(
- 22 :        [
- 23 :         ["protocol_type", protocol_type],
- 24 :         ["service", service],
- 25 :         ["flag", flag],
- 26 :         ["land", land],
- 27 :         ["logged_in", logged_in],
- 28 :         ["is_host_login", is_host_login],
- 29 :         ["is_guest_login", is_guest_login],
- 30 :        ],
- 31 :        [
- 32 :         ["duration",duration.to_f],
- 33 :         ["src_bytes", src_bytes.to_f],
- 34 :         ["dst_bytes", dst_bytes.to_f],
- 35 :         ["wrong_fragment", wrong_fragment.to_f],
- 36 :         ["urgent", urgent.to_f],
- 37 :         ["hot", hot.to_f],
- 38 :         ["num_failed_logins", num_failed_logins.to_f],
- 39 :         ["num_compromised", num_compromised.to_f],
- 40 :         ["root_shell", root_shell.to_f],
- 41 :         ["su_attempted", su_attempted.to_f],
- 42 :         ["num_root", num_root.to_f],
- 43 :         ["num_file_creations", num_file_creations.to_f],
- 44 :         ["num_shells", num_shells.to_f],
- 45 :         ["num_access_files", num_access_files.to_f],
- 46 :         ["num_outbound_cmds",num_outbound_cmds.to_f],
- 47 :         ["count", count.to_f],
- 48 :         ["srv_count", srv_count.to_f],
- 49 :         ["serror_rate", serror_rate.to_f],
- 50 :         ["srv_serror_rate", srv_serror_rate.to_f],
- 51 :         ["rerror_rate", rerror_rate.to_f],
- 52 :         ["srv_rerror_rate", srv_rerror_rate.to_f],
- 53 :         ["same_srv_rate", same_srv_rate.to_f],
- 54 :         ["diff_srv_rate", diff_srv_rate.to_f],
- 55 :         ["srv_diff_host_rate", srv_diff_host_rate.to_f],
- 56 :         ["dst_host_count", dst_host_count.to_f],
- 57 :         ["dst_host_srv_count", dst_host_srv_count.to_f],
- 58 :         ["dst_host_same_srv_rate", dst_host_same_srv_rate.to_f],
- 59 :         ["dst_host_same_src_port_rate", dst_host_same_src_port_rate.to_f],
- 60 :         ["dst_host_diff_srv_rate", dst_host_diff_srv_rate.to_f],
- 61 :         ["dst_host_srv_diff_host_rate", dst_host_srv_diff_host_rate.to_f],
- 62 :         ["dst_host_serror_rate", dst_host_serror_rate.to_f],
- 63 :         ["dst_host_srv_serror_rate", dst_host_srv_serror_rate.to_f],
- 64 :         ["dst_host_rerror_rate", dst_host_rerror_rate.to_f],
- 65 :         ["dst_host_srv_rerror_rate", dst_host_srv_rerror_rate.to_f],
- 66 :         ]
- 67 :        )
- 68 :     # 3.データの学習（学習モデルの更新）
- 69 :     ret = client.add($name, datum)
- 70 :     
- 71 :     # 4.結果の出力
- 72 :     if (ret[1] != Float::INFINITY) and (ret[1] != 1.0) then
- 73 :       print ret, label
- 74 :     end
- 75 :   }
- 76 : }
- 77 : 
+ #!/usr/bin/env ruby
+ # -*- coding: utf-8 -*-
+ 
+ $host = "127.0.0.1"
+ $port = 9199
+ $name = "test"
+ 
+ require 'json'
+ 
+ require 'jubatus/anomaly/client'
+ require 'jubatus/anomaly/types'
+ 
+ 
+ # 1.Jubatus Serverへの接続設定
+ client = Jubatus::Anomaly::Client::Anomaly.new($host, $port)
+ 
+ # 2.学習用データの準備
+ open("kddcup.data_10_percent.txt") {|f|
+   f.each { |line|
+     duration, protocol_type, service, flag, src_bytes, dst_bytes, land, wrong_fragment, urgent, hot, num_failed_logins, logged_in, num_compromised, root_shell, su_attempted, num_root, num_file_creations, num_shells, num_access_files, num_outbound_cmds, is_host_login, is_guest_login, count, srv_count, serror_rate, srv_serror_rate, rerror_rate, srv_rerror_rate, same_srv_rate, diff_srv_rate, srv_diff_host_rate, dst_host_count, dst_host_srv_count, dst_host_same_srv_rate, dst_host_diff_srv_rate, dst_host_same_src_port_rate, dst_host_srv_diff_host_rate, dst_host_serror_rate, dst_host_srv_serror_rate, dst_host_rerror_rate, dst_host_srv_rerror_rate, label = line.split(",")
+     datum = Jubatus::Anomaly::Datum.new(
+        [
+         ["protocol_type", protocol_type],
+         ["service", service],
+         ["flag", flag],
+         ["land", land],
+         ["logged_in", logged_in],
+         ["is_host_login", is_host_login],
+         ["is_guest_login", is_guest_login],
+        ],
+        [
+         ["duration",duration.to_f],
+         ["src_bytes", src_bytes.to_f],
+         ["dst_bytes", dst_bytes.to_f],
+         ["wrong_fragment", wrong_fragment.to_f],
+         ["urgent", urgent.to_f],
+         ["hot", hot.to_f],
+         ["num_failed_logins", num_failed_logins.to_f],
+         ["num_compromised", num_compromised.to_f],
+         ["root_shell", root_shell.to_f],
+         ["su_attempted", su_attempted.to_f],
+         ["num_root", num_root.to_f],
+         ["num_file_creations", num_file_creations.to_f],
+         ["num_shells", num_shells.to_f],
+         ["num_access_files", num_access_files.to_f],
+         ["num_outbound_cmds",num_outbound_cmds.to_f],
+         ["count", count.to_f],
+         ["srv_count", srv_count.to_f],
+         ["serror_rate", serror_rate.to_f],
+         ["srv_serror_rate", srv_serror_rate.to_f],
+         ["rerror_rate", rerror_rate.to_f],
+         ["srv_rerror_rate", srv_rerror_rate.to_f],
+         ["same_srv_rate", same_srv_rate.to_f],
+         ["diff_srv_rate", diff_srv_rate.to_f],
+         ["srv_diff_host_rate", srv_diff_host_rate.to_f],
+         ["dst_host_count", dst_host_count.to_f],
+         ["dst_host_srv_count", dst_host_srv_count.to_f],
+         ["dst_host_same_srv_rate", dst_host_same_srv_rate.to_f],
+         ["dst_host_same_src_port_rate", dst_host_same_src_port_rate.to_f],
+         ["dst_host_diff_srv_rate", dst_host_diff_srv_rate.to_f],
+         ["dst_host_srv_diff_host_rate", dst_host_srv_diff_host_rate.to_f],
+         ["dst_host_serror_rate", dst_host_serror_rate.to_f],
+         ["dst_host_srv_serror_rate", dst_host_srv_serror_rate.to_f],
+         ["dst_host_rerror_rate", dst_host_rerror_rate.to_f],
+         ["dst_host_srv_rerror_rate", dst_host_srv_rerror_rate.to_f],
+         ]
+        )
+     # 3.データの学習（学習モデルの更新）
+     ret = client.add($name, datum)
+     
+     # 4.結果の出力
+     if (ret[1] != Float::INFINITY) and (ret[1] != 1.0) then
+       print ret, label
+     end
+   }
+ }
 
 
 --------------------------------
@@ -153,7 +152,7 @@ Anomaly チュートリアル (Ruby)
  "key"は"*"、"type"は"str"、"sample_weight"は"bin"、"global_weight"は"bin"としています。
  これは、すべての文字列に対して、指定された文字列をそのまま特徴として利用し、各key-value毎の重みと今までの通算データから算出される、大域的な重みを常に"1"とする設定です。
 
-* parameter（要修正）
+* parameter
 
  ･･･
 
